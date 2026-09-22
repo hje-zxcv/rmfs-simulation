@@ -91,3 +91,33 @@ Additionally, throughout the simulation:
 - Number of products collected by each station
 - Number of times each robot went to charge
 - Number of times each robot moved to charge
+
+---
+
+# Update Notes (2026-09)
+
+This fork includes the following fixes and additions on top of the original repository:
+
+## Bug Fixes
+- Fixed filename case mismatch (`main` → `Main`) causing import errors on case-sensitive systems.
+- Removed leftover markdown code fences (` ``` `) accidentally left in `Main.py` and `config.py`.
+- Fixed missing `_STR` suffix inconsistencies in `config.py` variable names referenced by `Interface.py`.
+- Fixed indentation error in `Interface.py`'s Taguchi experiment loop.
+- Restored core methods in `Main.py` (`updateCharge`, `collectTimeStat`, `calculateObservationStat`, `orderGenerator`, `distanceMatrixCalculate`, etc.) that were missing due to a prior refactor. The full original implementation was recovered from an earlier commit in the repository history.
+- Fixed tuple unpacking bug in `podSelectionHungarian` and function name mismatch (`MultiCycleVRP` vs `TaguchiVRP`).
+
+## Setup Notes
+- Install dependencies with `pip install -r requirements.txt`.
+- If you hit a NumPy/pandas import error, make sure NumPy is pinned below version 2 (`pip install "numpy<2" --force-reinstall`), then **restart your kernel/terminal**.
+- `xlsxwriter` is required for Excel output and was not listed in the original README.
+
+## New Feature: Time-of-Use (TOU) Aware Charging Scheduling
+Added a set of functions in `Main.py` to make robot charging schedules responsive to time-of-use electricity pricing:
+
+- `get_current_hour(env_now)`: converts simulation time (seconds) into a 0–23 hour value.
+- `get_electricity_price(hour)`: returns the electricity price (KRW/kWh) based on Korea's 2026 industrial (Eul) tariff (High-voltage A, Option 3, summer season), split into off-peak / mid-peak / peak hours.
+- `get_dynamic_charge_flag_rate(base_rate, hour, rest_rate, intensity)`: adjusts each robot's charge-seeking threshold by time of day and a tunable `intensity` parameter (0.0 = baseline, 1.0 = max effect), while always keeping a safety margin above the robot's mandatory rest threshold.
+- `RMFS_Model.get_effective_charge_flag_rate(robot)`: helper used by `Entities.py` to fetch the dynamically adjusted threshold at charge-decision time.
+- `RMFS_Model.totalElectricityCost`: accumulates electricity cost (KRW) over a simulation run based on each charging event's timing and the price at that hour.
+
+This enables comparing a baseline (fixed threshold, `intensity=0`) against TOU-aware policies (`intensity>0`) to study the cost-vs-throughput trade-off of shifting charging load toward cheaper night-time hours.

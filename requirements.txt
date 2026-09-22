@@ -1,0 +1,9 @@
+pandas
+numpy<2
+simpy
+networkx
+ortools
+pydoe3
+gurobipy
+xlsxwriter
+torch
