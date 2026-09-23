@@ -58,7 +58,7 @@ def run_single_experiment_quiet(intensity, seed, numCycle, cycleSeconds, numOrde
 cycleSeconds = 900
 numCycle = (24 * 3600 // cycleSeconds) * 2
 intensities = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-N_REPEATS = 5  # 반복 횟수는 여기서 숫자만 바꾸면 됩니다
+N_REPEATS = 10  # 반복 횟수
 
 results = []
 count = 0
