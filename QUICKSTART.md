@@ -74,6 +74,8 @@ for intensity in intensities:
 
 df_results = pd.DataFrame(results)
 df_results.to_csv('tou_experiment_results.csv', index=False)
+print("저장 완료: tou_experiment_results.csv")
+```
 
 ## 4. 목표 충전량 통제 실험 (신규)
 
@@ -103,5 +105,4 @@ df = pd.DataFrame(results)
 df.to_csv(f"target_soc_results_intensity_{INTENSITY}.csv", index=False)
 \`\`\`
 
-print("저장 완료: tou_experiment_results.csv")
-```
+
