@@ -59,6 +59,19 @@ def get_dynamic_charge_flag_rate(base_rate, hour, rest_rate, intensity):
     adjusted = max(adjusted, rest_rate + 0.02)  # 강제임계값보다 항상 여유 유지 (안전장치)
     return adjusted
 
+def get_dynamic_target_soc(base_target, hour, intensity, min_floor):
+    if intensity == 0:
+        return base_target
+    if 22 <= hour or hour < 8:
+        adjusted = base_target + 0.15 * intensity
+    elif 18 <= hour < 21:
+        adjusted = base_target - 0.05 * intensity
+    else:
+        adjusted = base_target
+    adjusted = min(1.0, adjusted)
+    adjusted = max(adjusted, min_floor)
+    return adjusted
+
 
 class RMFS_Model():
     def __init__(self, env, network, TaskAssignmentPolicy="vrp", ChargePolicy="pearl", DropPodPolicy="fixed"):
@@ -80,6 +93,7 @@ class RMFS_Model():
         self.totalPodStationDist = 0
         self.totalElectricityCost = 0.0
         self.touIntensity = 0.0  # 0=baseline, 1=최대 강도
+        self.enableTargetSOCControl = False
 
     def createPods(self):
         """
@@ -204,6 +218,21 @@ class RMFS_Model():
             rest_rate=robot.RestRate,
             intensity=self.touIntensity
         )
+
+    def get_effective_target_soc(self, robot):
+        if not self.enableTargetSOCControl:
+            return robot.MaxChargeRate
+        current_hour = get_current_hour(self.env.now)
+        effective_charge_flag_rate = self.get_effective_charge_flag_rate(robot)
+        safety_floor = effective_charge_flag_rate + 0.05
+        return get_dynamic_target_soc(
+            base_target=robot.MaxChargeRate,
+            hour=current_hour,
+            intensity=self.touIntensity,
+            min_floor=safety_floor,
+        )
+
+
 
     def insertChargeQueue(self, robot):
         """
@@ -690,7 +719,8 @@ class RMFS_Model():
                         energy_charged_kwh = energy_charged_ah * ROBOT_VOLTAGE / 1000
                         self.totalElectricityCost += energy_charged_kwh * price_per_kwh
 
-                        if robot.batteryLevel >= robot.MaxBattery * robot.MaxChargeRate:
+                        effective_target_soc = self.get_effective_target_soc(robot)
+                        if robot.batteryLevel >= robot.MaxBattery * effective_target_soc:
                             newRobot = self.removeChargeQueue()
                             chargingStation.currentRobot = None
                             robot.status = "extract"
