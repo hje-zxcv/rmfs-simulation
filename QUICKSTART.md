@@ -72,6 +72,35 @@ for intensity in intensities:
               f"cost={r['total_cost']:.1f}, throughput={r['throughput']}, "
               f"charge_events={r['total_charge_events']}")
 
+
+## 4. 목표 충전량 통제 실험 (신규)
+
+`git pull`로 최신 코드를 받은 후, Jupyter에서:
+
+\`\`\`python
+%cd "본인 경로\rmfs-simulation-main"
+from experiment_target_soc import run_single_experiment_quiet
+import pandas as pd
+
+results = []
+NUM_CYCLE = 192
+CYCLE_SECONDS = 900
+INTENSITY = 본인이 맡은 값  # 0.8 또는 1.0
+
+for seed in range(본인이 맡은 seed 시작, 본인이 맡은 seed 끝):
+    for enable in [False, True]:
+        r = run_single_experiment_quiet(
+            intensity=INTENSITY, seed=seed,
+            numCycle=NUM_CYCLE, cycleSeconds=CYCLE_SECONDS,
+            enable_target_control=enable
+        )
+        results.append(r)
+        print(r)
+
+df = pd.DataFrame(results)
+df.to_csv(f"target_soc_results_intensity_{INTENSITY}.csv", index=False)
+\`\`\`
+
 df_results = pd.DataFrame(results)
 df_results.to_csv('tou_experiment_results.csv', index=False)
 print("저장 완료: tou_experiment_results.csv")
