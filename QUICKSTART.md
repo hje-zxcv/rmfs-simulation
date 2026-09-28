@@ -88,19 +88,19 @@ import pandas as pd
 
 NUM_CYCLE = 192
 CYCLE_SECONDS = 900
-INTENSITY = 본인이 맡은 값  # 예: 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 중 본인 담당 값
+INTENSITY = 0.0   # 본인 담당 값으로 교체
 
 results = []
 for seed in range(30):
-    for enable in [False, True]:
-        r = run_single_experiment_quiet(
-            intensity=INTENSITY, seed=seed,
-            numCycle=NUM_CYCLE, cycleSeconds=CYCLE_SECONDS,
-            enable_target_control=enable
-        )
-        results.append(r)
-        print(r)
+    r = run_single_experiment_quiet(
+        intensity=INTENSITY, seed=seed,
+        numCycle=NUM_CYCLE, cycleSeconds=CYCLE_SECONDS,
+        enable_target_control=True    # <- 신규만 고정
+    )
+    results.append(r)
+    print(r)
 
 df = pd.DataFrame(results)
-df.to_csv(f"target_soc_results_intensity_{INTENSITY}.csv", index=False)
+df.to_csv(f"target_soc_results_NEW_intensity_{INTENSITY}.csv", index=False)
+print("저장 완료")
 ```
