@@ -81,17 +81,17 @@ print("저장 완료: tou_experiment_results.csv")
 
 `git pull`로 최신 코드를 받은 후, Jupyter에서:
 
-\`\`\`python
+```python
 %cd "본인 경로\rmfs-simulation-main"
 from experiment_target_soc import run_single_experiment_quiet
 import pandas as pd
 
-results = []
 NUM_CYCLE = 192
 CYCLE_SECONDS = 900
-INTENSITY = 본인이 맡은 값  # 0.8 또는 1.0
+INTENSITY = 본인이 맡은 값  # 예: 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 중 본인 담당 값
 
-for seed in range(본인이 맡은 seed 시작, 본인이 맡은 seed 끝):
+results = []
+for seed in range(30):
     for enable in [False, True]:
         r = run_single_experiment_quiet(
             intensity=INTENSITY, seed=seed,
@@ -103,6 +103,4 @@ for seed in range(본인이 맡은 seed 시작, 본인이 맡은 seed 끝):
 
 df = pd.DataFrame(results)
 df.to_csv(f"target_soc_results_intensity_{INTENSITY}.csv", index=False)
-\`\`\`
-
-
+```
