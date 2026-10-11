@@ -188,6 +188,8 @@ class Robot():
                 self.createPath(extractTask.outputstation.location, tempGraph=tempGraph)
                 del tempGraph
                 yield self.env.process(self.move())
+                yield self.env.timeout(getattr(config, "PICK_DWELL_SECONDS", 0))
+                self.pod_visits = getattr(self, "pod_visits", 0) + 1
                 self.pod.status = "storageTaken"
 
             if self.pod.status == "storageTaken": #or self.currentNode != PodFixedLocation:
