@@ -188,8 +188,21 @@ class Robot():
                 self.createPath(extractTask.outputstation.location, tempGraph=tempGraph)
                 del tempGraph
                 yield self.env.process(self.move())
-                yield self.env.timeout(getattr(config, "PICK_DWELL_SECONDS", 0))
+                                # --- 체류 = 기본 + 개당 x 이번 방문 처리 건수 ---
+                n_items = 0
+                try:
+                    tl = self.pod.takeItemList
+                    if tl:
+                        n_items = sum(tl.values()) if isinstance(tl, dict) else sum(x[1] for x in tl)
+                except Exception:
+                    n_items = 0
+                if getattr(config, "PICK_DWELL_BASE", None) is None:      # item_run.py가 아닐 때: 예전 방식
+                    dwell_t = getattr(config, "PICK_DWELL_SECONDS", 0)
+                else:
+                    dwell_t = config.PICK_DWELL_BASE + getattr(config, "PICK_DWELL_PER_ITEM", 0) * n_items
+                yield self.env.timeout(dwell_t)
                 self.pod_visits = getattr(self, "pod_visits", 0) + 1
+                self.pod_items = getattr(self, "pod_items", 0) + n_items
                 self.pod.status = "storageTaken"
 
             if self.pod.status == "storageTaken": #or self.currentNode != PodFixedLocation:

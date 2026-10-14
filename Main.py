@@ -255,13 +255,21 @@ class RMFS_Model():
         max_hit_pod = None
         satisfiedSKU = {} # {item1: amount1, item2: amount2}
         rtrItemList = itemList.copy()
+        import config   # (Main.py 위쪽에 이미 import config가 있으면 이 줄은 없어도 됨)
+        cap = getattr(config, "PICK_ITEM_CAP", None)   # 방문당 처리 상한(건). None이면 예전과 동일
         for pod_idx, pod in enumerate(self.Pods):
             hit = 0
             satisfiedSKU_temp = {}
             itemListTemp = itemList.copy()
             for idx, item in enumerate(itemListTemp): # iterates through items in the itemList (merged orders)
+                if cap is not None and hit >= cap:
+                    break
                 if item[0] in pod.skuDict.keys():
                     amount = min(itemListTemp[idx][1], pod.skuDict[item[0]])
+                    if cap is not None:
+                        amount = min(amount, cap - hit)
+                        if amount <= 0:
+                            continue
                     hit += amount
                     itemListTemp[idx][1] -= amount
                     satisfiedSKU_temp[item[0]] = amount
@@ -759,15 +767,34 @@ class RMFS_Model():
     def addCollectedSKUCount(self):
         if self.TaskAssignmentPolicy == "vrp" or self.TaskAssignmentPolicy == "rl":
             uncompletedTasks = []
-
+ 
             for robot in self.Robots:
                 uncompletedTasks.extend(robot.taskList)
-
+ 
             completedTasks = [task for task in self.extractTaskList if task not in uncompletedTasks]
             self.totalPodNumber += len(completedTasks)
-
+ 
+            # 같은 팟이 한 주기에 여러 번 선택될 수 있으므로(방문당 상한이 있을 때),
+            # 팟별로 "n번째 작업"과 "n번째 선택분"을 짝지어 건수를 센다.
+            task_idx = {}
+            if len(self.extractTaskList) == len(self.selectedPodsList):
+                positions = {}
+                for k, p in enumerate(self.selectedPodsList):
+                    positions.setdefault(id(p), []).append(k)
+                cnt = {}
+                for task in self.extractTaskList:
+                    n = cnt.get(id(task.pod), 0)
+                    cnt[id(task.pod)] = n + 1
+                    lst = positions.get(id(task.pod), [])
+                    if lst:
+                        task_idx[id(task)] = lst[n] if n < len(lst) else lst[-1]
+            else:
+                self._cnt_mismatch = getattr(self, "_cnt_mismatch", 0) + 1
+ 
             for task in completedTasks:
-                idx = self.selectedPodsList.index(task.pod)
+                idx = task_idx.get(id(task))
+                if idx is None:
+                    idx = self.selectedPodsList.index(task.pod)      # 예전 방식(안전장치)
                 takenItems = self.satisfiedList[idx]
                 task.outputstation.totalPickedCount += sum(takenItems.values())
 
